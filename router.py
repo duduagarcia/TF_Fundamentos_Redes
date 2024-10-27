@@ -44,15 +44,17 @@ class Router:
 
 
     # Listen to the UDP socket and handle the received messages
-    # def listen(self):
-    #     while True:
-    #         try:
-    #             data, addr = self.UDP_SOCKET.recvfrom(1024)
-    #             print(f"Recebi: {data}")
-    #         except timeout:
-    #             print("Timeout")
-    #         except Exception as e:
-    #             print(f"Erro ao receber mensagem: {e}")
+    def listen(self):
+        while True:
+            try:
+                data, addr = self.UDP_SOCKET.recvfrom(2048)
+                print(f"Recebi: {data}")
+                data = data.decode()
+                print(f"Recebi: {data}")
+            except timeout:
+                print("Timeout")
+            except Exception as e:
+                print(f"Erro ao receber mensagem: {e}")
 
     # Send a message to the specified IP address
     def send_message(self, m_type):
@@ -139,7 +141,7 @@ class Router:
         # threading.Thread(target=self.send_message, args=("@")).start()
 
         # Start the thread that will listen to the UDP socket
-        # threading.Thread(target=self.listen).start()
+        threading.Thread(target=self.listen, daemon=True).start()
 
         while True:
             if(self.handle_user_input() == -1):
