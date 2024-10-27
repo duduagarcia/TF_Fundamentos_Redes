@@ -54,17 +54,38 @@ class Router:
     #         except Exception as e:
     #             print(f"Erro ao receber mensagem: {e}")
 
-    # # Send a message to the specified IP address
-    # def send_message(self, ip, message):
-    #     try:
-    #         self.UDP_SOCKET.sendto(message.encode(), (ip, self.port))
-    #     except Exception as e:
-    #         print(f"Erro ao enviar mensagem: {e}")
+    # Send a message to the specified IP address
+    def send_message(self, m_type):
+        try:
+
+            # * indicates that the router entereed in the network (runs only once)
+            if (m_type == "*"):
+
+                # sends a message to all neighbors with '*' and it's own IP address for the neighbors to add it to their routing tables
+                message = f"{m_type}{self.ip}"
+                print(f"Entering network *: {message}")
+
+                # acho que aqui, não mandamos para IP_DEST, mas sim para para IP_EXIT  !!!!!!!!
+                for row in self.router_table:
+                    self.UDP_SOCKET.sendto(message.encode(), (row['IP_EXIT'], self.port))
+
+
+            # @ indicates that it's a route update message
+            if(m_type == "@"):
+                message = ""
+                print(f"Updating routing table @: {message}")
+                # como vou adicionar IPs com saida diferente do IP destino !!!!!!!!!!!
+
+                # self.UDP_SOCKET.sendto(message.encode(), (ip, self.port))
+        except Exception as e:
+            print(f"Erro ao enviar mensagem: {e}")
 
 
     def handle_user_input(self):
         try:
             msg = input().strip()
+            if msg == "0":
+                self.send_message("teste", "192.168.1.2", "*")
         except KeyboardInterrupt:
             return -1
         print(f"Enviando: {msg}")
@@ -107,7 +128,18 @@ class Router:
 
     # Main router loop
     def run(self):
+
+        # Start the thread that will print the routing table every 12 seconds
         threading.Thread(target=self.periodic_printRouterTable, daemon=True).start()
+
+        # Send the first message to all neighbors, because the router has entered the network
+        self.send_message("*")
+
+        # Start the thread that will send for all neighbors the routing table
+        # threading.Thread(target=self.send_message, args=("@")).start()
+
+        # Start the thread that will listen to the UDP socket
+        # threading.Thread(target=self.listen).start()
 
         while True:
             if(self.handle_user_input() == -1):
