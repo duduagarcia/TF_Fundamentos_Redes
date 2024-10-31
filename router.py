@@ -67,6 +67,12 @@ class Router:
             except Exception as e:
                 print(f"Erro ao receber mensagem: {e}")
 
+    def send_table(self):
+        while True:
+            time.sleep(12)
+            self.send_message("@")
+
+
     # Send a message to the specified IP address
     def send_message(self, m_type):
         try:
@@ -85,8 +91,11 @@ class Router:
 
             # @ indicates that it's a route update message
             if(m_type == "@"):
-                message = ""
+                message = "oi"
                 print(f"Updating routing table @: {message}")
+                for row in self.router_table:
+                    self.UDP_SOCKET.sendto(message.encode(), (row['IP_EXIT'], self.port))
+
                 # como vou adicionar IPs com saida diferente do IP destino !!!!!!!!!!!
 
                 # self.UDP_SOCKET.sendto(message.encode(), (ip, self.port))
