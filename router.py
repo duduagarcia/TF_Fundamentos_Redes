@@ -69,7 +69,7 @@ class Router:
 
     def send_table(self):
         while True:
-            time.sleep(12)
+            time.sleep(2)
             self.send_message("@")
 
 
@@ -116,7 +116,7 @@ class Router:
     # Print the routing table every 12 seconds, this will run in a thread at the run() method
     def periodic_printRouterTable(self):
         while True:
-            time.sleep(12)  # Sleep for 12 seconds
+            time.sleep(5)  # Sleep for 12 seconds
             print("Current routing table (12s):")
             print(self.routingTable_toString())
 
@@ -167,7 +167,7 @@ class Router:
         self.send_message("*")
 
         # Start the thread that will send for all neighbors the routing table
-        # threading.Thread(target=self.send_message, args=("@")).start()
+        threading.Thread(target=self.send_table(), daemon=True).start()
 
         # Start the thread that will listen to the UDP socket
         threading.Thread(target=self.listen, daemon=True).start()
