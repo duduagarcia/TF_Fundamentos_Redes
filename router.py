@@ -10,15 +10,10 @@ class Router:
         self.port = 9000
         self.router_table = []  # {IP_DEST: x , METRIC: y, IP_EXIT: z}
         self.read_config_file(config_file_name) 
+
+        # Create the UDP socket
         self.UDP_SOCKET = socket(AF_INET, SOCK_DGRAM)
         self.UDP_SOCKET.bind((self.ip, self.port))
-
-        # Iniciar as threads para enviar e receber mensalmente
-        # threading.Thread(target=self.receive_messages, daemon=True).start()
-        # threading.Thread(target=self.send_messages, daemon=True).start()
-
-        # threading.Thread(target=self.listen, args=(self.CONTROLL_SOCKET,)).start()
-        # threading.Thread(target=self.listen, args=(self.DATA_SOCKET,)).start()
 
 
 
@@ -48,9 +43,25 @@ class Router:
         while True:
             try:
                 data, addr = self.UDP_SOCKET.recvfrom(2048)
-                print(f"Recebi: {data}")
                 data = data.decode()
-                print(f"Recebi: {data}")
+
+                msg_prefix = data[0]
+                # * indicates that the router entered in the network
+                if(msg_prefix == "*"):
+                    ip_new_neighbor = data.split("*")[1]
+                    print(f"===== NEW NEIGHBOR ({ip_new_neighbor}) HAS ENTERED NETWORK =====")
+                    # RELLY NEED TO ADD IT AGAIN? I THINK NOT ! BECAUSE IT WILL BE ADDED IN THE CONFIG FILE
+                    self.router_table.append({
+                        "IP_DEST": ip_new_neighbor,
+                        "METRIC": 1,
+                        "IP_EXIT": ip_new_neighbor
+                    })
+                elif (msg_prefix == "@"):
+                    print("Received route update message")
+                    new_routing_table = data
+                    print(f"New routing table: {new_routing_table}")
+                    # self.getRouterTableDiff(new_routing_table)
+
             except timeout:
                 print("Timeout")
             except Exception as e:
@@ -83,11 +94,11 @@ class Router:
             print(f"Erro ao enviar mensagem: {e}")
 
 
+    # Need to finish this!
     def handle_user_input(self):
         try:
             msg = input().strip()
-            if msg == "0":
-                self.send_message("teste", "192.168.1.2", "*")
+            # self.send_message("@")
         except KeyboardInterrupt:
             return -1
         print(f"Enviando: {msg}")
@@ -99,6 +110,15 @@ class Router:
             time.sleep(12)  # Sleep for 12 seconds
             print("Current routing table (12s):")
             print(self.routingTable_toString())
+
+
+    # Get the difference between the new routing table and the current routing table
+    def getRouterTableDiff(self, new_table):
+        # @192.168.1.2-1@192.168.1.3-1
+        diff = []
+        for row in new_table:
+            if row not in self.router_table:
+                diff.append(row)
 
 
 
@@ -143,13 +163,13 @@ class Router:
         # Start the thread that will listen to the UDP socket
         threading.Thread(target=self.listen, daemon=True).start()
 
+        # Loop that will handle the user input
         while True:
             if(self.handle_user_input() == -1):
                 break
 
 
 def main():
-    print("Hello, World!")
 
     try:
         roteador1 = Router('roteadores.txt')
