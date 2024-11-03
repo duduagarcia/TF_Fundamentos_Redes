@@ -62,7 +62,9 @@ class Router:
                 # * indicates that the router entered in the network
                 if(msg_prefix == "*"):
                     ip_new_neighbor = data.split("*")[1]
+                    print("\n")
                     print(f"===== NEW NEIGHBOR ({ip_new_neighbor}) HAS ENTERED NETWORK =====")
+                    print("\n")
 
                     if not self.isInsideRoutingTable(ip_new_neighbor):
                         print(f"Adding new neighbor to routing table: {ip_new_neighbor}")
@@ -74,10 +76,12 @@ class Router:
 
                 elif (msg_prefix == "@"):
                     formatted_table = self.convertTableStringToDict(data)
+                    print("\n")
                     print(f"Received route update message from - {ip_sender} \n{formatted_table}")
-                    
+                    print("\n")
                     print(f"Starting analysis")
                     self.getRouterTableDiff(formatted_table, ip_sender)
+                    print("\n")
 
             except timeout:
                 print("Timeout")
@@ -135,8 +139,12 @@ class Router:
     def periodic_printRouterTable(self):
         while True:
             time.sleep(12)  # Sleep for 12 seconds
+            print("\n")
+            print("\n")
             print("Current routing table (12s):")
             print(self.routingTable_toString())
+            print("\n")
+            print("\n")
 
 
     # Get the difference between the new routing table and the current routing table
