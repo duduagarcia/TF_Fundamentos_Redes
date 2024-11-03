@@ -59,9 +59,9 @@ class Router:
                 if(msg_prefix == "*"):
                     ip_new_neighbor = data.split("*")[1]
                     print(f"===== NEW NEIGHBOR ({ip_new_neighbor}) HAS ENTERED NETWORK =====")
-                    # RELLY NEED TO ADD IT AGAIN? I THINK NOT ! BECAUSE IT WILL BE ADDED IN THE CONFIG FILE
 
                     if not self.isInsideRoutingTable(ip_new_neighbor):
+                        print(f"Adding new neighbor to routing table: {ip_new_neighbor}")
                         self.router_table.append({
                             "IP_DEST": ip_new_neighbor,
                             "METRIC": 1,
@@ -69,10 +69,9 @@ class Router:
                         })
 
                 elif (msg_prefix == "@"):
-                    print("Received route update message")
                     formatted_table = self.convertTableStringToDict(data)
+                    print("Received route update message from - {ip_sender} \n{formatted_table}")
 
-                    print(f"Received routing table: {formatted_table}")
                     # self.getRouterTableDiff(new_routing_table)
 
             except timeout:
@@ -102,10 +101,10 @@ class Router:
                         self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
             elif (m_type == "@"):
                 message = self.convertTableDictToString(self.router_table)
-                print(f"Sending route update message: {message}")
 
                 for row in self.router_table:
                     if(row['IP_DEST'] in self.neighbors):
+                        print(f"Sending route update message to {row['IP_DEST']}: {message}" )
                         self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
            
         except Exception as e:
@@ -154,7 +153,7 @@ class Router:
 
  
     def routingTable_toString(self):
-        table = "IP_DEST       METRIC   IP_EXIT\n"
+        table = "IP_DEST           METRIC   IP_EXIT\n"
         for row in self.router_table:
             table += f"{row['IP_DEST']}   {row['METRIC']}        {row['IP_EXIT']}\n"
         return table
