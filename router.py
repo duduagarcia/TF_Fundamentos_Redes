@@ -140,17 +140,15 @@ class Router:
         while True:
             time.sleep(12)  # Sleep for 12 seconds
             print("\n")
-            print("\n")
             print("Current routing table (12s):")
             print(self.routingTable_toString())
-            print("\n")
             print("\n")
 
 
     # Get the difference between the new routing table and the current routing table
     def getRouterTableDiff(self, new_table, ip_sender):
 
-        old_table = self.router_table
+        old_table = self.router_table.copy()
 
         for row in new_table:
             ip_dest = row['IP_DEST']
@@ -171,10 +169,9 @@ class Router:
                     # If the IP destination is in the routing table, but the metric is different, update it
                     for row in self.router_table:
                         if row['IP_DEST'] == ip_dest:
-                            print(f"Route already exists in routing table: {ip_dest}")
 
                             if int(metric) + 1 < int(row['METRIC']):
-                                print(f"Updating route in routing table: {ip_dest}")
+                                print(f"Updating route metric in routing table: {ip_dest}")
                                 row['METRIC'] = int(metric) + 1
                                 row['IP_EXIT'] = ip_exit
 
