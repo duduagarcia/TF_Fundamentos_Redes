@@ -10,7 +10,7 @@ class Router:
         self.port = 9000
         self.router_table = []  # {IP_DEST: x , METRIC: y, IP_EXIT: z}
         self.neighbors = [] 
-        self.last_received_time = {}
+        self.last_received_time = []
         self.read_config_file(config_file_name) 
 
         # Create the UDP socket
@@ -37,10 +37,33 @@ class Router:
                             "IP_DEST": ip_neighbor,
                             "METRIC": metric,
                             "IP_EXIT": ip_neighbor
-                       })                         
+                       }) 
+
+                       self.last_received_time.append({
+                           "IP": ip_neighbor,
+                            "TIME": 0
+                       })                        
         except FileNotFoundError:
             print("Arquivo de configuração não encontrado.")
 
+    def tsteTimeout(self):
+        while True:
+            for row in self.last_received_time:
+                if row['TIME'] >= 35:
+                    print(f"Timeout for {row['IP']}")
+                    for row in self.router_table:
+                        if row['IP_DEST'] == row['IP_EXIT']:
+                            self.router_table.remove(row)
+                            print(f"Removing route to {row['IP_DEST']}")
+                    self.last_received_time.remove(row)
+
+            time.sleep(1)
+
+            
+            for row in self.last_received_time:
+                row['TIME'] += 1
+            print("Handling timeout")
+            
 
     # Listen to the UDP socket and handle the received messages
     def listen(self):
@@ -52,8 +75,8 @@ class Router:
                 # gets the IP address of the sender
                 ip_sender = addr[0]
 
-                # Atualiza o último tempo de recebimento para o vizinho
-                self.last_received_time[ip_sender] = time.time()
+                # Reset the timeout counter
+                self.last_received_time[ip_sender] = 0
 
                 # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
@@ -290,7 +313,7 @@ class Router:
         threading.Thread(target=self.listen, daemon=True).start()
 
         # TIMEOUT
-        # threading.Thread(target=self.handle_timeout, daemon=True).start()
+        threading.Thread(target=self.tsteTimeout, daemon=True).start()
 
         # Loop that will handle the user input
         while True:
