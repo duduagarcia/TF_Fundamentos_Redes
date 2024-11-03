@@ -103,7 +103,6 @@ class Router:
                             new_msg += splitted_data[i] + ";"
 
                         new_msg += msg_text
-                        print(f"Sending message to next hop: {new_msg}")
                         self.send_message("!", new_msg)
 
             except timeout:
