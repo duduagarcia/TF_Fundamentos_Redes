@@ -148,11 +148,11 @@ class Router:
             ip_exit = ip_sender
 
             # If the IP destination is not in the routing table, add it
-            if not self.isInsideRoutingTable(ip_dest):
+            if self.isInsideRoutingTable(ip_dest) == False:
                 print(f"Adding new route to routing table: {ip_dest}")
                 self.router_table.append({
                     "IP_DEST": ip_dest,
-                    "METRIC": metric + 1,
+                    "METRIC": int(metric) + 1,
                     "IP_EXIT": ip_exit
                 })
             else:
@@ -161,7 +161,7 @@ class Router:
                     if row['IP_DEST'] == ip_dest:
                         if row['METRIC'] > metric:
                             print(f"Updating route in routing table: {ip_dest}")
-                            row['METRIC'] = metric
+                            row['METRIC'] = int(metric)
                             row['IP_EXIT'] = ip_exit
 
 
