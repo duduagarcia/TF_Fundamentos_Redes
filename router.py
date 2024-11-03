@@ -169,11 +169,12 @@ class Router:
                     # If the IP destination is in the routing table, but the metric is different, update it
                     for row in self.router_table:
                         if row['IP_DEST'] == ip_dest:
-                            if int(row['METRIC']) > int(metric):
-                                print(f"Updating route in routing table: {ip_dest}")
-                                row['METRIC'] = int(metric)
-                                row['IP_EXIT'] = ip_exit
+                            print(f"Route already exists in routing table: {ip_dest}")
 
+                            if int(metric) + 1 < int(row['METRIC']):
+                                print(f"Updating route in routing table: {ip_dest}")
+                                row['METRIC'] = int(metric) + 1
+                                row['IP_EXIT'] = ip_exit
 
 
 
