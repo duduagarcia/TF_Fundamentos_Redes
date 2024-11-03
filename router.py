@@ -82,6 +82,29 @@ class Router:
                     print(f"Starting analysis")
                     self.getRouterTableDiff(formatted_table, ip_sender)
                     print("\n")
+                elif (msg_prefix == "!"):
+                    splitted_data = data.split(";")
+                    n_parts = len(splitted_data)
+
+                    msg_text = splitted_data[n_parts - 1]
+                    ip_final_dest = splitted_data[0].split("!")[1]
+
+
+                    print("\n")
+                    print(f"Received message from {ip_sender}: {data}")
+                    print("\n")
+                    if(ip_final_dest == self.ip):
+                        print(f"Message received: {data.split(';')[1]}")
+                    else:
+                        print("Não é o destinatário final")
+                        new_msg = f"!{ip_final_dest};"
+
+                        for i in range(1, n_parts - 1):
+                            new_msg += splitted_data[i] + ";"
+
+                        new_msg += msg_text
+                        print(f"Sending message to next hop: {new_msg}")
+                        self.send_message("!", new_msg)
 
             except timeout:
                 print("Timeout")
@@ -91,11 +114,11 @@ class Router:
     def send_table(self):
         while True:
             time.sleep(15)
-            self.send_message("@")
+            self.send_message("@","")
 
 
     # Send a message to the specified IP address
-    def send_message(self, m_type):
+    def send_message(self, m_type, text):
         try:
 
             # * indicates that the router entereed in the network (runs only once)
@@ -103,6 +126,9 @@ class Router:
 
                 message = f"{m_type}{self.ip}"
                 print(f"Entering network as: {message}")
+                print("Directly connected neighbors: ")
+                for row in self.neighbors:
+                    print("- " + row)
 
                 for row in self.router_table:
                     if(row['IP_DEST'] in self.neighbors):
@@ -116,6 +142,17 @@ class Router:
                         print(f"Sending route update message (15s) to {row['IP_DEST']}: {message}" )
                         self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
 
+            elif (m_type == "!"):
+                message = text
+                destination = text.split(";")[0]
+                ip_dest = destination.split("!")[1]
+
+
+                print(f"Sending message to {text}")
+                for row in self.router_table:
+                    if(row['IP_DEST'] == ip_dest):
+                        print(f"Sending message to {ip_dest} through {row['IP_EXIT']}")
+                        self.UDP_SOCKET.sendto(message.encode(), (row['IP_EXIT'], self.port))
            
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
@@ -130,7 +167,7 @@ class Router:
     def handle_user_input(self):
         try:
             msg = input().strip()
-            # self.send_message("@")
+            self.send_message("!", msg)
         except KeyboardInterrupt:
             return -1
         print(f"Enviando: {msg}")
@@ -245,7 +282,7 @@ class Router:
         # PRINT ROUTER TABLE FOR USER (12s)
         threading.Thread(target=self.periodic_printRouterTable, daemon=True).start()
 
-        self.send_message("*")
+        self.send_message("*", "")
 
         # SEND TABLE TO NEIGHBORS (15s)
         threading.Thread(target=self.send_table, daemon=True).start()
