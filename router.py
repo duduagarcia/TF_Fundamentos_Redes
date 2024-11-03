@@ -10,6 +10,7 @@ class Router:
         self.port = 9000
         self.router_table = []  # {IP_DEST: x , METRIC: y, IP_EXIT: z}
         self.neighbors = [] 
+        self.last_received_time = {}
         self.read_config_file(config_file_name) 
 
         # Create the UDP socket
@@ -51,6 +52,9 @@ class Router:
                 # gets the IP address of the sender
                 ip_sender = addr[0]
 
+                # Atualiza o último tempo de recebimento para o vizinho
+                self.last_received_time[ip_sender] = time.time()
+
                 # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
 
@@ -70,7 +74,7 @@ class Router:
 
                 elif (msg_prefix == "@"):
                     formatted_table = self.convertTableStringToDict(data)
-                    print("Received route update message from - {ip_sender} \n{formatted_table}")
+                    print(f"Received route update message from - {ip_sender} \n{formatted_table}")
 
                     # self.getRouterTableDiff(new_routing_table)
 
@@ -81,7 +85,7 @@ class Router:
 
     def send_table(self):
         while True:
-            time.sleep(10)
+            time.sleep(15)
             self.send_message("@")
 
 
@@ -104,11 +108,17 @@ class Router:
 
                 for row in self.router_table:
                     if(row['IP_DEST'] in self.neighbors):
-                        print(f"Sending route update message to {row['IP_DEST']}: {message}" )
+                        print(f"Sending route update message (15s) to {row['IP_DEST']}: {message}" )
                         self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
+                        
            
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
+
+    def handle_timeout(self):
+        while True:
+            time.sleep(1)
+            print("Handling timeout")
 
 
     # Need to finish this!
@@ -199,17 +209,19 @@ class Router:
 
     def run(self):
 
-        # Start the thread that will print the routing table every 12 seconds
+        # PRINT ROUTER TABLE FOR USER (12s)
         threading.Thread(target=self.periodic_printRouterTable, daemon=True).start()
 
-        # Send the first message to all neighbors, because the router has entered the network
         self.send_message("*")
 
-        # Start the thread that will send for all neighbors the routing table
+        # SEND TABLE TO NEIGHBORS (15s)
         threading.Thread(target=self.send_table, daemon=True).start()
 
-        # Start the thread that will listen to the UDP socket
+        # LISTEN UDP
         threading.Thread(target=self.listen, daemon=True).start()
+
+        # TIMEOUT
+        # threading.Thread(target=self.handle_timeout, daemon=True).start()
 
         # Loop that will handle the user input
         while True:
