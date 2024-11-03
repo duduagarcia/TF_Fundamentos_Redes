@@ -75,8 +75,9 @@ class Router:
                 elif (msg_prefix == "@"):
                     formatted_table = self.convertTableStringToDict(data)
                     print(f"Received route update message from - {ip_sender} \n{formatted_table}")
-
-                    # self.getRouterTableDiff(new_routing_table)
+                    
+                    print(f"Starting analysis")
+                    self.getRouterTableDiff(formatted_table, ip_sender)
 
             except timeout:
                 print("Timeout")
@@ -110,7 +111,7 @@ class Router:
                     if(row['IP_DEST'] in self.neighbors):
                         print(f"Sending route update message (15s) to {row['IP_DEST']}: {message}" )
                         self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
-                        
+
            
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
@@ -139,12 +140,30 @@ class Router:
 
 
     # Get the difference between the new routing table and the current routing table
-    def getRouterTableDiff(self, new_table):
-        # @192.168.1.2-1@192.168.1.3-1
-        diff = []
+    def getRouterTableDiff(self, new_table, ip_sender):
+
         for row in new_table:
-            if row not in self.router_table:
-                diff.append(row)
+            ip_dest = row['IP_DEST']
+            metric = row['METRIC']
+            ip_exit = ip_sender
+
+            # If the IP destination is not in the routing table, add it
+            if not self.isInsideRoutingTable(ip_dest):
+                print(f"Adding new route to routing table: {ip_dest}")
+                self.router_table.append({
+                    "IP_DEST": ip_dest,
+                    "METRIC": metric + 1,
+                    "IP_EXIT": ip_exit
+                })
+            else:
+                # If the IP destination is in the routing table, but the metric is different, update it
+                for row in self.router_table:
+                    if row['IP_DEST'] == ip_dest:
+                        if row['METRIC'] > metric:
+                            print(f"Updating route in routing table: {ip_dest}")
+                            row['METRIC'] = metric
+                            row['IP_EXIT'] = ip_exit
+
 
 
 
