@@ -150,6 +150,8 @@ class Router:
     # Get the difference between the new routing table and the current routing table
     def getRouterTableDiff(self, new_table, ip_sender):
 
+        old_table = self.router_table
+
         for row in new_table:
             ip_dest = row['IP_DEST']
             metric = row['METRIC']
@@ -176,6 +178,10 @@ class Router:
                                 row['METRIC'] = int(metric) + 1
                                 row['IP_EXIT'] = ip_exit
 
+        if(old_table != self.router_table):
+            print("Routing table has changed")
+        else:
+            print("Routing table has not changed")
 
 
     # AUXILIARY METHODS
