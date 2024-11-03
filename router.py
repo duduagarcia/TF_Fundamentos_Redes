@@ -9,6 +9,7 @@ class Router:
         self.ip = self.get_local_ip_address()
         self.port = 9000
         self.router_table = []  # {IP_DEST: x , METRIC: y, IP_EXIT: z}
+        self.neighbors = [] 
         self.read_config_file(config_file_name) 
 
         # Create the UDP socket
@@ -29,6 +30,8 @@ class Router:
                        ip_neighbor = ip_and_metric.split("-")[0]
                        metric = ip_and_metric.split("-")[1]
 
+                       self.neighbors.append(ip_neighbor)
+
                        self.router_table.append({
                             "IP_DEST": ip_neighbor,
                             "METRIC": metric,
@@ -45,21 +48,31 @@ class Router:
                 data, addr = self.UDP_SOCKET.recvfrom(2048)
                 data = data.decode()
 
+                # gets the IP address of the sender
+                ip_sender = addr[0]
+
+                # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
+
+
                 # * indicates that the router entered in the network
                 if(msg_prefix == "*"):
                     ip_new_neighbor = data.split("*")[1]
                     print(f"===== NEW NEIGHBOR ({ip_new_neighbor}) HAS ENTERED NETWORK =====")
                     # RELLY NEED TO ADD IT AGAIN? I THINK NOT ! BECAUSE IT WILL BE ADDED IN THE CONFIG FILE
-                    self.router_table.append({
-                        "IP_DEST": ip_new_neighbor,
-                        "METRIC": 1,
-                        "IP_EXIT": ip_new_neighbor
-                    })
+
+                    if not self.isInsideRoutingTable(ip_new_neighbor):
+                        self.router_table.append({
+                            "IP_DEST": ip_new_neighbor,
+                            "METRIC": 1,
+                            "IP_EXIT": ip_sender
+                        })
+
                 elif (msg_prefix == "@"):
                     print("Received route update message")
-                    new_routing_table = data
-                    print(f"New routing table: {new_routing_table}")
+                    formatted_table = self.convertTableStringToDict(data)
+
+                    print(f"Received routing table: {formatted_table}")
                     # self.getRouterTableDiff(new_routing_table)
 
             except timeout:
@@ -69,7 +82,7 @@ class Router:
 
     def send_table(self):
         while True:
-            time.sleep(2)
+            time.sleep(10)
             self.send_message("@")
 
 
@@ -80,25 +93,21 @@ class Router:
             # * indicates that the router entereed in the network (runs only once)
             if (m_type == "*"):
 
-                # sends a message to all neighbors with '*' and it's own IP address for the neighbors to add it to their routing tables
                 message = f"{m_type}{self.ip}"
-                print(f"Entering network *: {message}")
+                print(f"Entering network as: {message}")
 
-                # acho que aqui, não mandamos para IP_DEST, mas sim para para IP_EXIT  !!!!!!!!
                 for row in self.router_table:
-                    self.UDP_SOCKET.sendto(message.encode(), (row['IP_EXIT'], self.port))
+                    if(row['IP_DEST'] in self.neighbors):
+                        
+                        self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
+            elif (m_type == "@"):
+                message = self.convertTableDictToString(self.router_table)
+                print(f"Sending route update message: {message}")
 
-
-            # @ indicates that it's a route update message
-            if(m_type == "@"):
-                message = "oi"
-                print(f"Updating routing table @: {message}")
                 for row in self.router_table:
-                    self.UDP_SOCKET.sendto(message.encode(), (row['IP_EXIT'], self.port))
-
-                # como vou adicionar IPs com saida diferente do IP destino !!!!!!!!!!!
-
-                # self.UDP_SOCKET.sendto(message.encode(), (ip, self.port))
+                    if(row['IP_DEST'] in self.neighbors):
+                        self.UDP_SOCKET.sendto(message.encode(), (row['IP_DEST'], self.port))
+           
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
 
@@ -113,10 +122,9 @@ class Router:
         print(f"Enviando: {msg}")
 
 
-    # Print the routing table every 12 seconds, this will run in a thread at the run() method
     def periodic_printRouterTable(self):
         while True:
-            time.sleep(5)  # Sleep for 12 seconds
+            time.sleep(12)  # Sleep for 12 seconds
             print("Current routing table (12s):")
             print(self.routingTable_toString())
 
@@ -133,31 +141,63 @@ class Router:
 
     # AUXILIARY METHODS
 
-    # Get the local IP address, so we doesn't need to ipconfig everytime
     def get_local_ip_address(self):
         try:
             s = socket(AF_INET, SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))  # Conecta a um servidor externo
-            ip_local = s.getsockname()[0]  # Obtém o IP local
+            s.connect(("8.8.8.8", 80))
+            ip_local = s.getsockname()[0]
             s.close()
             return ip_local
         except Exception as e:
             print(f"Erro ao obter IP: {e}")
             return None
 
-    # Return the routing table as a formated string
+ 
     def routingTable_toString(self):
         table = "IP_DEST       METRIC   IP_EXIT\n"
         for row in self.router_table:
             table += f"{row['IP_DEST']}   {row['METRIC']}        {row['IP_EXIT']}\n"
         return table
 
-    # Return the size of the routing table
+   
     def routingTable_size(self):
         return len(self.router_table)
     
+   
+    def isInsideRoutingTable(self, ip):
+        for row in self.router_table:
+            if row['IP_DEST'] == ip:
+                return True
+        return False
+    
+   
+    def convertTableStringToDict(self, table_string):
+        # @192.168.1.2-1@192.168.1.3-1
+        rows = table_string.split("@")
 
-    # Main router loop
+        table = []
+
+        for row in rows:
+            if row:
+                ip_and_metric = row.split("-")
+                ip = ip_and_metric[0]
+                metric = ip_and_metric[1]
+
+                table.append({
+                    "IP_DEST": ip,
+                    "METRIC": metric,
+                    "IP_EXIT": ip
+                })
+        
+        return table
+    
+    def convertTableDictToString(self, table):
+        table_string = ""
+        for row in table:
+            table_string += f"@{row['IP_DEST']}-{row['METRIC']}"
+        return table_string
+
+
     def run(self):
 
         # Start the thread that will print the routing table every 12 seconds
@@ -167,7 +207,7 @@ class Router:
         self.send_message("*")
 
         # Start the thread that will send for all neighbors the routing table
-        threading.Thread(target=self.send_table(), daemon=True).start()
+        threading.Thread(target=self.send_table, daemon=True).start()
 
         # Start the thread that will listen to the UDP socket
         threading.Thread(target=self.listen, daemon=True).start()
