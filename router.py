@@ -76,7 +76,7 @@ class Router:
                 ip_sender = addr[0]
 
                 # Reset the timeout counter
-                self.last_received_time[ip_sender] = 0
+                # self.last_received_time[ip_sender] = 0
 
                 # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
