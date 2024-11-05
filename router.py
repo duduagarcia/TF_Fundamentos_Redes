@@ -51,12 +51,12 @@ class Router:
     def tsteTimeout(self):
         while True:
             for row in self.last_received_time:
-                if row['TIME'] >= 25:
+                if row['TIME'] >= 10:
                     print(f"Timeout for {row['IP']}")
-                    for row in self.router_table:
-                        if row['IP_DEST'] == row['IP_EXIT']:
-                            self.router_table.remove(row)
-                            print(f"Removing route to {row['IP_DEST']}")
+                    for row1 in self.router_table:
+                        if row1['IP_DEST'] == row1['IP_EXIT']:
+                            self.router_table.remove(row1)
+                            print(f"Removing route to {row1['IP_DEST']}")
                     self.last_received_time.remove(row)
 
             time.sleep(1)
