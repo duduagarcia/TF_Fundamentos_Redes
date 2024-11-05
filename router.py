@@ -63,6 +63,7 @@ class Router:
                     for row in self.last_received_time:
                         row['TIME'] += 1
                         print(f"Handling timeout for {row['IP']} -- {row['TIME']}")
+
             
 
     # Listen to the UDP socket and handle the received messages
@@ -75,7 +76,7 @@ class Router:
                 # gets the IP address of the sender
                 ip_sender = addr[0]
 
-                # HERE
+
                 print("CHEGOU AQUI")
                 for row in self.last_received_time:
                     if row['IP'] == ip_sender:
@@ -83,6 +84,7 @@ class Router:
                         row['TIME'] = 0
                         break
                 # self.last_received_time[ip_sender] = 0
+
 
                 # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
@@ -103,7 +105,7 @@ class Router:
                             "IP_EXIT": ip_sender
                         })
 
-                        # HERE
+
                         self.last_received_time.append({
                             "IP": ip_new_neighbor,
                             "TIME": 0
