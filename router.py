@@ -1,7 +1,5 @@
-from socket import socket, timeout, AF_INET, SOCK_DGRAM, SOCK_STREAM
+from socket import socket, timeout, AF_INET, SOCK_DGRAM
 import threading
-from sys import argv
-import base64
 import time
 
 class Router:
@@ -39,7 +37,7 @@ class Router:
                             "IP_EXIT": ip_neighbor
                        }) 
 
-                        # HERE
+                        
                        self.last_received_time.append({
                            "IP": ip_neighbor,
                            "TIME": 0
@@ -47,40 +45,24 @@ class Router:
         except FileNotFoundError:
             print("Arquivo de configuração não encontrado.")
 
-    # HERE
+
     def tsteTimeout(self):
         while True:
             if(len(self.last_received_time) > 0):
                 for row in self.last_received_time:
                     if row['TIME'] >= 35:
                         print(f"Timeout for {row['IP']}")
-                        for row in self.router_table:
-                            if row['IP_DEST'] == row['IP_EXIT']:
-                                self.router_table.remove(row)
-                                print(f"Removing route to {row['IP_DEST']}")
+                        for row1 in self.router_table:
+                            if row1['IP_DEST'] == row['IP']:
+                                self.router_table.remove(row1)
+                                print(f"Removing route to {row1['IP_DEST']}")
                         self.last_received_time.remove(row)
 
                 time.sleep(1)
                 if(len(self.last_received_time) > 0):
                     for row in self.last_received_time:
                         row['TIME'] += 1
-            
-        # while True:
-        #     for row in self.last_received_time:
-        #         if row['TIME'] >= 35:
-        #             print(f"Timeout for {row['IP']}")
-        #             for row in self.router_table:
-        #                 if row['IP_DEST'] == row['IP_EXIT']:
-        #                     self.router_table.remove(row)
-        #                     print(f"Removing route to {row['IP_DEST']}")
-        #             self.last_received_time.remove(row)
-
-        #     time.sleep(1)
-
-            
-        #     for row in self.last_received_time:
-        #         row['TIME'] += 1
-        #     print("Handling timeout")
+                        print(f"Handling timeout for {row['IP']} -- {row['TIME']}")
             
 
     # Listen to the UDP socket and handle the received messages
@@ -122,6 +104,10 @@ class Router:
                         })
 
                         # HERE
+                        self.last_received_time.append({
+                            "IP": ip_new_neighbor,
+                            "TIME": 0
+                        })
 
                 elif (msg_prefix == "@"):
                     formatted_table = self.convertTableStringToDict(data)
