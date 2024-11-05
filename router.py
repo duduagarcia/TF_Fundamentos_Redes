@@ -313,7 +313,7 @@ class Router:
         threading.Thread(target=self.listen, daemon=True).start()
 
         # TIMEOUT
-        threading.Thread(target=self.tsteTimeout, daemon=True).start()
+        # threading.Thread(target=self.tsteTimeout, daemon=True).start()
 
         # Loop that will handle the user input
         while True:
