@@ -39,17 +39,19 @@ class Router:
                             "IP_EXIT": ip_neighbor
                        }) 
 
+
                        self.last_received_time.append({
                            "IP": ip_neighbor,
                             "TIME": 0
-                       })                        
+                       })
         except FileNotFoundError:
             print("Arquivo de configuração não encontrado.")
 
+    # ISTO ESTÁ CORRETO
     def tsteTimeout(self):
         while True:
             for row in self.last_received_time:
-                if row['TIME'] >= 35:
+                if row['TIME'] >= 25:
                     print(f"Timeout for {row['IP']}")
                     for row in self.router_table:
                         if row['IP_DEST'] == row['IP_EXIT']:
@@ -76,7 +78,9 @@ class Router:
                 ip_sender = addr[0]
 
                 # Reset the timeout counter
-                # self.last_received_time[ip_sender] = 0
+                for timeout_control in self.last_received_time:
+                    if(timeout_control['IP'] == ip_sender):
+                        timeout_control['TIME'] = 0
 
                 # gets the message prefix, to know what to do with the message
                 msg_prefix = data[0]
@@ -95,6 +99,12 @@ class Router:
                             "IP_DEST": ip_new_neighbor,
                             "METRIC": 1,
                             "IP_EXIT": ip_sender
+                        })
+
+                        # 
+                        self.last_received_time.append({
+                            "IP": ip_new_neighbor,
+                            "TIME": 0
                         })
 
                 elif (msg_prefix == "@"):
@@ -313,7 +323,7 @@ class Router:
         threading.Thread(target=self.listen, daemon=True).start()
 
         # TIMEOUT
-        # threading.Thread(target=self.tsteTimeout, daemon=True).start()
+        threading.Thread(target=self.tsteTimeout, daemon=True).start()
 
         # Loop that will handle the user input
         while True:
